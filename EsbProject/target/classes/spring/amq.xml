@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd        http://camel.apache.org/schema/spring       http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+  <bean id="jms" class="org.apache.camel.component.jms.JmsComponent">
+    <property name="connectionFactory" ref="amqConnectionFactory"/>
+    <property name="transacted" value="true"/>
+    <property name="transactionManager" ref="amqTransactionManager"/>
+    <property name="cacheLevelName" value="CACHE_CONSUMER"/>
+  </bean>
+
+  <bean id="amqConnectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory"
+        init-method="start" destroy-method="stop">
+    <property name="connectionFactory">
+      <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="${activemq.broker.url}"/>
+        <property name="userName" value="${activemq.broker.username}"/>
+        <property name="password" value="${activemq.broker.password}"/>
+        <property name="redeliveryPolicy">
+          <bean class="org.apache.activemq.RedeliveryPolicy">
+            <property name="maximumRedeliveries" value="-1"/>
+            <property name="useExponentialBackOff" value="true"/>
+            <property name="maximumRedeliveryDelay" value="60000"/>
+          </bean>
+        </property>
+      </bean>
+    </property>
+  </bean>
+
+  <bean id="amqTransactionManager" class="org.springframework.jms.connection.JmsTransactionManager">
+    <property name="connectionFactory" ref="amqConnectionFactory"/>
+  </bean>
+
+  <bean id="amqTransactionPolicy" class="org.apache.camel.spring.spi.SpringTransactionPolicy">
+    <property name="transactionManager" ref="amqTransactionManager"/>
+    <property name="propagationBehaviorName" value="PROPAGATION_REQUIRED"/>
+  </bean>
+
+
+</beans>
